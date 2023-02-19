@@ -1,9 +1,10 @@
 import java.util.Arrays;
+import java.util.List;
 
 public class Matrix {
-    int[][] matrix;
+    double[][] matrix;
 
-    public Matrix(int[][] matrix) {
+    public Matrix(double[][] matrix) {
         this.matrix = matrix;
     }
 
@@ -11,7 +12,7 @@ public class Matrix {
     public String toString() {
         StringBuilder stringBuilder = new StringBuilder("");
         // Loop through all rows
-        for (int[] row : matrix)
+        for (double[] row : matrix)
             // converting each row as string
             // and then printing in a separate line
             stringBuilder.append(Arrays.toString(row)).append('\n');
@@ -20,7 +21,11 @@ public class Matrix {
 
     public Node lowerCost(){
         try {
-            this.addRight(new int[][] {{matrix[0][0]},{matrix[1][0]},{matrix[2][0]}});
+            double[][] addedColumn = new double[matrix.length][1];
+            for (int i = 0; i < matrix.length; i++) {
+                addedColumn[i][0] = matrix[i][0];
+            }
+            this.addRight(addedColumn);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -42,7 +47,12 @@ public class Matrix {
 
     public Node higherCost(){
         try {
-            this.addDown(new int[][] {{matrix[0][0],matrix[0][1],matrix[0][2],matrix[0][3],0}});
+            double[][] addedRow = new double[1][matrix[0].length];
+            for (int i = 0; i < matrix[0].length - 1; i++) {
+                addedRow[0][i] = matrix[0][1];
+            }
+            addedRow[0][matrix[0].length - 1] = 0;
+            this.addDown(addedRow);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -62,9 +72,9 @@ public class Matrix {
         return result;
     }
 
-    public void addRight(int[][] mas) throws Exception {
+    public void addRight(double[][] mas) throws Exception {
         if (mas.length == matrix.length){
-            int[][] newMatrix = new int[matrix.length][matrix[0].length + 1];
+            double[][] newMatrix = new double[matrix.length][matrix[0].length + 1];
             // Merge the two matrices
             for(int i = 0; i < matrix.length; i++) {
                 for(int j = 0; j < matrix[0].length; j++) {
@@ -84,9 +94,9 @@ public class Matrix {
         }
     }
 
-    public void addDown(int[][] mas) throws Exception {
+    public void addDown(double[][] mas) throws Exception {
         if (mas[0].length == matrix[0].length) {
-            int[][] newMatrix = new int[matrix.length + mas.length][matrix[0].length];
+            double[][] newMatrix = new double[matrix.length + mas.length][matrix[0].length];
             System.arraycopy(matrix, 0, newMatrix, 0, matrix.length);
             System.arraycopy(mas, 0, newMatrix, matrix.length, mas.length);
             matrix = newMatrix;
@@ -99,7 +109,7 @@ public class Matrix {
         Node result = new Node(-1,-1);
         for (int i = 0; i < matrix.length; i++) {
             boolean isSaddlePointExist = true;
-            int minimum = matrix[i][0];
+            double minimum = matrix[i][0];
             int colIndexOfRowMinimum = 0;
 
             //finds minimum in row
