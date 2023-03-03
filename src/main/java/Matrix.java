@@ -1,163 +1,116 @@
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
-public class Matrix {
-    double[][] matrix;
+public class Matrix<T> {
+    private Map<Cell, T> content = new HashMap<>();
 
-    public Matrix(double[][] matrix) {
-        this.matrix = matrix;
+    public Matrix() {
+
     }
 
-    @Override
-    public String toString() {
-        StringBuilder stringBuilder = new StringBuilder("");
-        // Loop through all rows
-        for (double[] row : matrix)
-            // converting each row as string
-            // and then printing in a separate line
-            stringBuilder.append(Arrays.toString(row)).append('\n');
-        return stringBuilder.toString();
-    }
-
-    public Node lowerCost(){
-        try {
-            double[][] addedColumn = new double[matrix.length][1];
-            for (int i = 0; i < matrix.length; i++) {
-                addedColumn[i][0] = matrix[i][0];
-            }
-            this.addRight(addedColumn);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        for (int i = 0; i < matrix.length; i++) {
-            for (int j = 1; j < matrix[0].length - 1; j++) {
-                if (matrix[i][j] < matrix[i][matrix[0].length - 1]) {
-                    matrix[i][matrix[0].length - 1] = matrix[i][j];
+    public Matrix(Matrix other) {
+        List<String> columnNames = other.columnNames();
+        List<String> rowNames = other.rowNames();
+        for (String columnName : columnNames) {
+            for (String rowName : rowNames) {
+                Cell cell = new Cell(columnName, rowName);
+                T cellValue = (T) other.get(cell);
+                if (cellValue != null) {
+                    set(cell, cellValue);
                 }
             }
         }
-        Node result = new Node(0, matrix[0].length - 1);
-        for (int i = 0; i < matrix.length; i++) {
-            if (matrix[i][matrix[0].length - 1] > matrix[result.a][result.b]){
-                result = new Node(i,matrix[0].length - 1);
-            }
-        }
-        return result;
     }
 
-    public Node higherCost(){
-        try {
-            double[][] addedRow = new double[1][matrix[0].length];
-            for (int i = 0; i < matrix[0].length - 1; i++) {
-                addedRow[0][i] = matrix[0][1];
-            }
-            addedRow[0][matrix[0].length - 1] = 0;
-            this.addDown(addedRow);
-        } catch (Exception e) {
-            e.printStackTrace();
+    public ArrayList<String> columnNames() {
+        Set<String> uniqueColumnName = new HashSet<>();
+        for (Cell cell : content.keySet()) {
+            uniqueColumnName.add(cell.getColumn());
         }
-        for (int i = 1; i < matrix.length; i++) {
-            for (int j = 0; j < matrix[0].length - 1; j++) {
-                if (matrix[i][j] > matrix[matrix.length - 1][j]) {
-                    matrix[matrix.length - 1][j] = matrix[i][j];
-                }
-            }
-        }
-        Node result = new Node(matrix.length - 1, 0);
-        for (int i = 0; i < matrix[0].length - 1; i++) {
-            if (matrix[matrix.length - 1][i] < matrix[result.a][result.b]){
-                result = new Node(matrix.length - 1, i);
-            }
-        }
-        return result;
+        return new ArrayList<>(new ArrayList<>(uniqueColumnName));
     }
 
-    public void addRight(double[][] mas) throws Exception {
-        if (mas.length == matrix.length){
-            double[][] newMatrix = new double[matrix.length][matrix[0].length + 1];
-            // Merge the two matrices
-            for(int i = 0; i < matrix.length; i++) {
-                for(int j = 0; j < matrix[0].length; j++) {
-                    // To store elements
-                    // of matrix A
-                    newMatrix[i][j] = matrix[i][j];
-                }
-                for(int j = 0; j < mas[0].length; j++) {
-                    // To store elements
-                    // of matrix B
-                    newMatrix[i][j + matrix[0].length] = mas[i][j];
-                }
+    public ArrayList<String> rowNames() {
+        Set<String> uniqueRowName = new HashSet<>();
+        for (Cell cell : content.keySet()) {
+            uniqueRowName.add(cell.getRow());
+        }
+        return new ArrayList<>(new ArrayList<>(uniqueRowName));
+    }
+
+    public T get(Cell cell) {
+        return content.getOrDefault(cell, null);
+    }
+
+    public void set(Cell cell, T value) {
+        if (value == null) {
+            if (content.containsKey(cell)) {
+                content.remove(cell);
             }
-            matrix = newMatrix;
         } else {
-            throw new Exception("Mass length and number of rows don't match");
+            content.put(cell, value);
         }
     }
 
-    public void addDown(double[][] mas) throws Exception {
-        if (mas[0].length == matrix[0].length) {
-            double[][] newMatrix = new double[matrix.length + mas.length][matrix[0].length];
-            System.arraycopy(matrix, 0, newMatrix, 0, matrix.length);
-            System.arraycopy(mas, 0, newMatrix, matrix.length, mas.length);
-            matrix = newMatrix;
-        }else {
-            throw new Exception("Mass length and number of rows don't match");
+    public int width() {
+        Set<String> uniqueColumnName = new HashSet<>();
+        for (Cell cell : content.keySet()) {
+            uniqueColumnName.add(cell.getColumn());
+        }
+        return uniqueColumnName.size();
+    }
+
+    public int height() {
+        Set<String> uniqueRowName = new HashSet<>();
+        for (Cell cell : content.keySet()) {
+            uniqueRowName.add(cell.getRow());
+        }
+        return uniqueRowName.size();
+    }
+
+    public void removeRow(String rowName) {
+        List<Cell> cellsToRemove = new ArrayList<>();
+
+        for (Cell cell : content.keySet()) {
+            if (cell.getRow().equals(rowName)) {
+                cellsToRemove.add(new Cell(cell.getColumn(), cell.getRow()));
+            }
+        }
+
+        for (Cell cell : cellsToRemove) {
+            content.remove(cell);
         }
     }
 
-    public Node saddlePoint(){
-        Node result = new Node(-1,-1);
-        for (int i = 0; i < matrix.length; i++) {
-            boolean isSaddlePointExist = true;
-            double minimum = matrix[i][0];
-            int colIndexOfRowMinimum = 0;
+    public void removeColumn(String columnName) {
+        List<Cell> cellsToRemove = new ArrayList<>();
 
-            //finds minimum in row
-            for (int j = 1; j < matrix[0].length; j++) {
-                if (matrix[i][j] < minimum) {
-                    minimum = matrix[i][j];
-                    colIndexOfRowMinimum = j;
-                }
-            }
-
-            //find maximum in same column
-            for (int j = 0; j < matrix.length; j++) {
-                if (minimum < matrix[j][colIndexOfRowMinimum]) {
-                    //if the above condition becomes true set saddle point to false
-                    isSaddlePointExist = false;
-                    break;
-                }
-            }
-
-            if (isSaddlePointExist) {
-                //saves the saddle point
-                //System.out.println("The saddle point of the matrix is: " + minimum);
-                result = new Node(i, colIndexOfRowMinimum);
+        for (Cell cell : content.keySet()) {
+            if (cell.getColumn().equals(columnName)) {
+                cellsToRemove.add(new Cell(cell.getColumn(), cell.getRow()));
             }
         }
-        return result;
+
+        for (Cell cell : cellsToRemove) {
+            content.remove(cell);
+        }
     }
 
-    public class Node{
-        int a,b;
-
-        public Node(int a, int b) {
-            this.a = a;
-            this.b = b;
+    public void changeRowName(String oldName, String newName) {
+        for (String columnName : columnNames()) {
+            Cell oldCell = new Cell(columnName, oldName);
+            Cell newCell = new Cell(columnName, newName);
+            set(newCell, get(oldCell));
         }
+        removeRow(oldName);
+    }
 
-        public boolean exists(){
-            if (a < 0 || b < 0 || a > matrix.length || b > matrix[0].length) {
-                return false;
-            }
-            return true;
+    public void changeColumnName(String oldName, String newName) {
+        for (String rowName : rowNames()) {
+            Cell oldCell = new Cell(oldName, rowName);
+            Cell newCell = new Cell(newName, rowName);
+            set(newCell, get(oldCell));
         }
-
-        @Override
-        public String toString() {
-            if (exists()) {
-                return "Точка (" + a + "," + b + "), со значением " + matrix[a][b] + '.';
-            } else return "Точки не существует.";
-        }
+        removeColumn(oldName);
     }
 }
